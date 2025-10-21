@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { cuesFromText } from '@/lib/wawa';
+import { setLipsyncCues } from './LipsyncController';
 
 export default function MessageForm({ sessionId }: { sessionId?: string }) {
   const [name, setName] = useState('');
@@ -24,6 +26,10 @@ export default function MessageForm({ sessionId }: { sessionId?: string }) {
         .select('id, text')
         .single();
       if (error) throw error;
+
+      // 1) get cues (Wawa or fallback), 2) play them
+      const cues = await cuesFromText(text);
+      setLipsyncCues(cues);
 
       setLog(l => [{ id: data.id, text: data.text }, ...l]);
       setText('');
