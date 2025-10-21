@@ -1,45 +1,80 @@
-"use client";
+'use client';
 
 import { useGLTF } from '@react-three/drei';
-import { Bone } from 'three';
+import type { Bone, Mesh, Object3D, SkinnedMesh } from 'three';
 import { useEffect, useMemo } from 'react';
+
+type MorphMesh = (Mesh | SkinnedMesh) & {
+  morphTargetDictionary: Record<string, number>;
+  morphTargetInfluences: number[];
+};
+
+function isMorphMesh(o: Object3D): o is MorphMesh {
+  const m = o as Partial<MorphMesh> & { isMesh?: boolean };
+  // three attaches isMesh on Mesh/SkinnedMesh; check it without using `any`
+  return !!(
+    m.isMesh &&
+    m.morphTargetDictionary &&
+    m.morphTargetInfluences
+  );
+}
+
+function isBone(o: Object3D): o is Bone {
+  return (o as Bone).isBone === true;
+}
+
+type AvatarUserData = {
+  morphTargets: Record<string, MorphMesh>;
+  jawBone?: Bone | null;
+  headBone?: Bone | null;
+};
 
 export default function Avatar() {
   const { scene } = useGLTF('/models/avatar.glb');
 
-  // collect morph targets (will be empty on this model) + try to find a jaw bone
   const info = useMemo(() => {
-    const morphTargets: Record<string, any> = {};
+    const morphTargets: Record<string, MorphMesh> = {};
     const bones: Bone[] = [];
 
-    scene.traverse((o: any) => {
-      if (o?.morphTargetDictionary && o?.morphTargetInfluences) morphTargets[o.name] = o;
-      if (o.isBone) bones.push(o as Bone);
+    scene.traverse((o: Object3D) => {
+      if (isBone(o)) bones.push(o);
+      if (isMorphMesh(o)) morphTargets[o.name] = o;
     });
 
-    // heuristics: common jaw names (Mixamo uses "mixamorig:Jaw")
     const jaw =
-      bones.find(b => /jaw/i.test(b.name)) ||
-      bones.find(b => /chin/i.test(b.name)) ||
+      bones.find((b) => /jaw/i.test(b.name)) ||
+      bones.find((b) => /chin/i.test(b.name)) ||
       null;
 
-    return { morphTargets, bones, jaw };
+    const head =
+      bones.find((b) => /head/i.test(b.name)) ||
+      bones.find((b) => /neck/i.test(b.name)) ||
+      null;
+
+    return { morphTargets, bones, jaw, head };
   }, [scene]);
 
   useEffect(() => {
-    (scene as any).userData.morphTargets = info.morphTargets;
-    (scene as any).userData.jawBone = info.jaw;
-
-  // basic upright/scale fixes — adjust as needed for your model
-  // face camera: 180° around Y
-  scene.rotation.set(0, Math.PI, 0);
+    // face camera
+    scene.rotation.set(0, Math.PI, 0);
     scene.position.set(0, 0, 0);
-    scene.scale.set(1, 1, 1); // tweak if model is huge/tiny
+    scene.scale.set(1, 1, 1);
 
-    console.log('[Avatar] morph targets:', Object.keys(info.morphTargets)); // likely []
-    console.log('[Avatar] jaw bone:', info.jaw?.name ?? 'not found');
-    if (!info.jaw) {
-      console.log('[Avatar] bone list:', (info.bones || []).map(b => b.name));
+    const ud: AvatarUserData = (scene.userData as AvatarUserData) ?? {
+      morphTargets: {},
+    };
+    ud.morphTargets = info.morphTargets;
+    ud.jawBone = info.jaw;
+    ud.headBone = info.head;
+    scene.userData = ud;
+
+    if (process.env.NODE_ENV !== 'production') {
+      const names = new Set<string>();
+      Object.values(info.morphTargets).forEach((m) => {
+        Object.keys(m.morphTargetDictionary).forEach((k) => names.add(k));
+      });
+      console.log('[Avatar] morph targets:', Array.from(names));
+      console.log('[Avatar] jaw:', info.jaw?.name ?? 'not found', 'head:', info.head?.name ?? 'not found');
     }
   }, [scene, info]);
 
