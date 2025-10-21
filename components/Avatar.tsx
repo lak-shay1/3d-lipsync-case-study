@@ -30,6 +30,12 @@ export default function Avatar() {
     (scene as any).userData.morphTargets = info.morphTargets;
     (scene as any).userData.jawBone = info.jaw;
 
+  // basic upright/scale fixes — adjust as needed for your model
+  // face camera: 180° around Y
+  scene.rotation.set(0, Math.PI, 0);
+    scene.position.set(0, 0, 0);
+    scene.scale.set(1, 1, 1); // tweak if model is huge/tiny
+
     console.log('[Avatar] morph targets:', Object.keys(info.morphTargets)); // likely []
     console.log('[Avatar] jaw bone:', info.jaw?.name ?? 'not found');
     if (!info.jaw) {
