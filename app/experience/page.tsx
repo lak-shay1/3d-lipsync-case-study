@@ -8,7 +8,10 @@ export default function ExperiencePage() {
   const [sessionId, setSessionId] = useState<string>();
 
   useEffect(() => {
-    setSessionId(getOrCreateSessionId());
+    (async () => {
+      const id = await getOrCreateSessionId();
+      setSessionId(id);
+    })();
   }, []);
 
   return (

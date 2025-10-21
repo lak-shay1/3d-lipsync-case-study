@@ -1,21 +1,38 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 
-export default function MessageForm({
-  sessionId,
-}: { sessionId?: string }) {
+export default function MessageForm({ sessionId }: { sessionId?: string }) {
   const [name, setName] = useState('');
   const [text, setText] = useState('');
   const [log, setLog] = useState<{ id: string; text: string }[]>([]);
+  const [busy, setBusy] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!text || !sessionId) return;
-    // (supabase will save later; for now just show it in UI)
-    const id = crypto.randomUUID();
-    setLog(l => [{ id, text }, ...l]);
-    setText('');
+    setBusy(true);
+    try {
+      // keep session display name fresh (optional)
+      if (name) await supabase.from('sessions').update({ display_name: name }).eq('id', sessionId);
+
+      // save the message
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({ session_id: sessionId, text })
+        .select('id, text')
+        .single();
+      if (error) throw error;
+
+      setLog(l => [{ id: data.id, text: data.text }, ...l]);
+      setText('');
+    } catch (err) {
+      console.error(err);
+      alert('Could not save message — check console.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -33,9 +50,11 @@ export default function MessageForm({
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
-        <button className="rounded bg-black text-white px-4 py-2 disabled:opacity-50"
-          disabled={!sessionId}>
-          Speak
+        <button
+          className="rounded bg-black text-white px-4 py-2 disabled:opacity-50"
+          disabled={!sessionId || busy}
+        >
+          {busy ? 'Saving…' : 'Speak'}
         </button>
       </form>
 
