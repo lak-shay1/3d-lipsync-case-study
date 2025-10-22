@@ -9,7 +9,7 @@ This project was developed as part of a technical case study focused on creating
 
 ## Live Demo
 
-- [View on Vercel](https://your-vercel-url.vercel.app)  
+- [View on Vercel]([https://your-vercel-url.vercel.app](https://3d-lipsync-case-study-three.vercel.app))  
 - [GitHub Repository](https://github.com/lak-shay1/3d-lipsync-case-study)
 
 ---
