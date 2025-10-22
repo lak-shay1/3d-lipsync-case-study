@@ -1,36 +1,178 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+# 3D Lipsync Case Study Real-Time Avatar Interaction using Next.js, R3F & Supabase
 
-First, run the development server:
+An interactive **3D web application** built with **Next.js (App Router)**, **React Three Fiber**, and **Supabase**, featuring a real-time speaking avatar powered by **Wawa Lipsync**.
+
+This project was developed as part of a technical case study focused on creating immersive, AI-driven 3D experiences that support multiple concurrent users and live messaging sessions.
+
+---
+
+## Live Demo
+
+- [View on Vercel](https://your-vercel-url.vercel.app)  
+- [GitHub Repository](https://github.com/lak-shay1/3d-lipsync-case-study)
+
+---
+
+## Features
+
+- **3D Avatar Rendering** — Renders an open-source GLB avatar in a dynamic Three.js scene using React Three Fiber (R3F).  
+- **Lipsync Animation** — Synchronizes the avatar’s jaw movement with user-provided text using Wawa Lipsync.  
+- **3D Environment** — Includes a lightweight, open-source 3D background for spatial context.  
+- **Interactive Messaging** — Users can input messages, which are stored in Supabase and trigger avatar speech.  
+- **Session Management** — Each session is isolated using unique IDs stored in localStorage.  
+- **Supabase Integration** — Real-time sync for user messages and concurrent session tracking.  
+- **Deployed on Vercel** — Optimized for serverless deployment and static asset delivery.
+
+---
+
+## Tech Stack
+
+| Category | Tools / Libraries |
+|-----------|------------------|
+| Framework | [Next.js 15 (App Router)](https://nextjs.org/) |
+| 3D Rendering | [React Three Fiber](https://github.com/pmndrs/react-three-fiber), [@react-three/drei](https://github.com/pmndrs/drei) |
+| Lipsync Engine | [Wawa Lipsync](https://github.com/wass08/wawa-lipsync) |
+| Database / Realtime | [Supabase](https://supabase.com/) |
+| Styling | [Tailwind CSS](https://tailwindcss.com/) |
+| Language | TypeScript |
+| Deployment | Vercel |
+
+---
+
+## Project Structure
+
+```
+
+3d-lipsync-case-study/
+├── app/
+│   ├── page.tsx                  # Landing page
+│   ├── experience/
+│   │   ├── page.tsx              # Main 3D experience route
+│   │   ├── components/
+│   │   │   ├── Avatar.tsx        # 3D avatar setup + rotation fixes
+│   │   │   ├── Scene.tsx         # R3F Canvas and environment
+│   │   │   ├── LipsyncController.tsx  # Handles mouth animation logic
+│   │   │   ├── Form.tsx          # Name + message input
+│   │   └── utils/
+│   │       ├── supabase.ts       # Realtime Supabase client setup
+│   │       └── wawa.ts           # Wawa Lipsync text cue generator
+├── public/
+│   ├── models/
+│   │   └── avatar.glb            # 3D model asset
+│   └── env/
+│       └── .env.local            # Local Supabase keys (ignored in git)
+├── tailwind.config.js
+├── tsconfig.json
+├── package.json
+└── README.md
+
+````
+
+---
+
+## Setup & Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/lak-shay1/3d-lipsync-case-study.git
+cd 3d-lipsync-case-study
+````
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Environment Variables
+
+Create a `.env.local` file in the root directory and add your Supabase credentials:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_KEY
+```
+
+### 4. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit [http://localhost:3000](http://localhost:3000) to preview the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Implementation Overview
 
-## Learn More
+### 1. 3D Avatar & Scene
 
-To learn more about Next.js, take a look at the following resources:
+* Loaded via `useGLTF()` from `@react-three/drei`.
+* Rotated 180° to face the camera.
+* Includes scaling and positional normalization for consistent framing.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2. Lipsync System
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+* Integrates **Wawa Lipsync** to map text to mouth shape cues.
+* Fallback generator ensures continuous animation when visemes aren’t present.
+* Supports future integration with TTS engines (e.g., ElevenLabs, OpenTTS).
 
-## Deploy on Vercel
+### 3. Real-Time Messaging
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+* Uses **Supabase Realtime** to store and broadcast user messages.
+* Each user gets a session ID via localStorage.
+* Messages trigger the avatar animation sequence.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 4. Session Management
+
+* Session IDs stored locally to isolate users.
+* Synced with Supabase to manage concurrent sessions.
+
+---
+
+## Commands
+
+| Command         | Description                    |
+| --------------- | ------------------------------ |
+| `npm run dev`   | Start local development server |
+| `npm run build` | Create production build        |
+| `npm run lint`  | Lint code using ESLint         |
+| `npm run start` | Serve built version locally    |
+
+---
+
+## Developer Notes
+
+* Current avatar uses jaw bone fallback for lipsync (no blendshapes).
+* Modular structure — swapping models with blendshapes will improve viseme accuracy.
+* Built with TypeScript for type safety and maintainability.
+* Strict ESLint configuration for consistent code quality.
+
+---
+
+## Future Improvements
+
+* Add text-to-speech integration (ElevenLabs / OpenTTS).
+* Integrate ARKit viseme model for enhanced facial animation.
+* Enable real-time speech playback with Supabase channel sync.
+* Support multi-user live sessions using WebSocket or Supabase channels.
+* Optimize rendering with suspense and lazy loading.
+
+---
+
+## About the Developer
+
+**Lakshay Arora**
+Final-Year Computer Science Student, RMIT University (Melbourne)
+Experience in Machine Learning, DevOps, and Cloud-Native Full Stack Development.
+
+* [GitHub](https://github.com/lak-shay1)
+* [LinkedIn](https://www.linkedin.com/in/lakshay-arora1)
+
+---
+
+## License
+
+This project is open-source and available under the **MIT License**.
