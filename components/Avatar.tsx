@@ -1,8 +1,8 @@
-'use client';
+ 'use client';
 
+import { Suspense, useEffect, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
 import type { Bone, Mesh, Object3D, SkinnedMesh } from 'three';
-import { useEffect, useMemo } from 'react';
 
 type MorphMesh = (Mesh | SkinnedMesh) & {
   morphTargetDictionary: Record<string, number>;
@@ -29,7 +29,7 @@ type AvatarUserData = {
   headBone?: Bone | null;
 };
 
-export default function Avatar() {
+function AvatarInner() {
   const { scene } = useGLTF('/models/avatar.glb');
 
   const info = useMemo(() => {
@@ -79,6 +79,21 @@ export default function Avatar() {
   }, [scene, info]);
 
   return <primitive object={scene} />;
+}
+
+export default function Avatar() {
+  return (
+    <Suspense
+      fallback={
+        <mesh>
+          <boxGeometry args={[0.8, 1.6, 0.3]} />
+          <meshStandardMaterial />
+        </mesh>
+      }
+    >
+      <AvatarInner />
+    </Suspense>
+  );
 }
 
 useGLTF.preload('/models/avatar.glb');
