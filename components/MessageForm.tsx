@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { cuesFromText } from '@/lib/wawa';
-import { setLipsyncCues } from './LipsyncController';
+import lipsyncManager from '@/lib/lipsyncManager';
 
 export default function MessageForm({ sessionId }: { sessionId?: string }) {
   const [name, setName] = useState('');
@@ -29,7 +29,15 @@ export default function MessageForm({ sessionId }: { sessionId?: string }) {
 
       // 1) get cues (Wawa or fallback), 2) play them
       const cues = await cuesFromText(text);
-      setLipsyncCues(cues);
+      // hand cues to the lipsync manager which will drive the avatar
+      try {
+        lipsyncManager.setCues(cues);
+      } catch (e) {
+        // fallback: still call the old setter if present
+        // (older code path)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (await import('./LipsyncController')).setLipsyncCues?.(cues as any);
+      }
 
       setLog(l => [{ id: data.id, text: data.text }, ...l]);
       setText('');
