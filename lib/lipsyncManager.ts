@@ -19,25 +19,23 @@ class LipsyncManager {
     // and expose connectAudio. This is best-effort and non-blocking.
     (async () => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
         const mod = await import('wawa-lipsync');
-        // The library exports a class/constructor named Lipsync or default
-        const candidate = (mod as any).Lipsync ?? (mod as any).default ?? (mod as any);
+        // The library may export a constructor (Lipsync) or default; try a few shapes
+        const m = mod as unknown;
+        const asRecord = m as Record<string, unknown>;
+        const candidate = (asRecord.Lipsync ?? asRecord.default ?? m) as unknown;
         if (typeof candidate === 'function') {
-          // instantiate the manager if possible
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-          this.wawaManager = new candidate();
-          // if wawa provides a way to subscribe, wire it through
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          if (this.wawaManager && (this.wawaManager as any).on) {
-            // forward events
-            (this.wawaManager as any).on('viseme', (v: any) => {
-              const vis: Viseme = { name: String(v?.name ?? 'M'), weight: Number(v?.weight ?? 1) };
+          const Ctor = candidate as unknown as new (...args: unknown[]) => unknown;
+          this.wawaManager = new Ctor();
+          const wm = this.wawaManager as Record<string, unknown> | undefined;
+          if (wm && typeof wm.on === 'function') {
+            (wm.on as unknown as (evt: string, cb: (v: unknown) => void) => void)('viseme', (v: unknown) => {
+              const vis: Viseme = { name: String((v as Record<string, unknown>)?.name ?? 'M'), weight: Number((v as Record<string, unknown>)?.weight ?? 1) };
               this.setCurrent(vis);
             });
           }
         }
-      } catch (e) {
+      } catch {
         // not available — manager will use cue fallback
       }
     })();
@@ -56,12 +54,12 @@ class LipsyncManager {
   }
 
   connectAudio(audioEl: HTMLMediaElement) {
-    if (this.wawaManager && (this.wawaManager as any).connectAudio) {
+    const wm = this.wawaManager as Record<string, unknown> | undefined;
+    if (wm && typeof wm.connectAudio === 'function') {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-        (this.wawaManager as any).connectAudio(audioEl);
+        (wm.connectAudio as unknown as (el: HTMLMediaElement) => void)(audioEl);
         return true;
-      } catch (e) {
+      } catch {
         // fall through
       }
     }

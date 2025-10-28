@@ -118,7 +118,7 @@ function AvatarInner() {
     return () => {
       try {
         unsub();
-      } catch (e) {
+      } catch {
         // ignore
       }
     };

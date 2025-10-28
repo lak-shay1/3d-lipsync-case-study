@@ -32,7 +32,7 @@ export default function MessageForm({ sessionId }: { sessionId?: string }) {
       // hand cues to the lipsync manager which will drive the avatar
       try {
         lipsyncManager.setCues(cues);
-      } catch (e) {
+      } catch {
         // fallback: still call the old setter if present
         // (older code path)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
